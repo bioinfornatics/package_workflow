@@ -48,6 +48,11 @@ declare -x originalDir
 declare -x -a rpmsList=()
 declare -x -a sourcesFiles=()
 
+# die
+# This function is used to raise an error
+# Paramecters:
+# - line number
+# - message
 die () {
     local parent_lineno message code
       parent_lineno="$1"
@@ -63,6 +68,12 @@ die () {
       end "${code}"
 }
 
+# init
+# This function is used to initialized the workfow.
+# Evry script need to start by this function
+# Set log file for the given package
+# Parameter:
+# - package name
 init () {
     [[ $# -eq 1 ]]      || die ${LINENO} 'init expected a one parameter to set package_name. Not '"$#" 1
     [[ -n "$1" ]]       || die ${LINENO} 'Package name should to be not empty'
@@ -102,6 +113,11 @@ init () {
     getSourcesFiles
 }
 
+# end
+# This function is used to correctly quit the script
+# You do not have need to call it as this function is called automatically when scrit exiting.
+# Parameter:
+# - exit code default 0
 end (){
     local code
     [[ -n $1 ]] && code="$1" || code=0
@@ -113,6 +129,11 @@ end (){
     exit "${code}"
 }
 
+# configReader
+# This function is used to read the config file and set variables automatically.
+# You do not have need to call it as this function is called from builder script.
+# Parameter:
+# - config file to use
 configReader() {
     local section line configFile
     local -i lineNumber=1
@@ -152,6 +173,11 @@ configReader() {
     done < "${configFile}"
 }
 
+# bumpSpec
+# This function is used to increase the release number
+# You do not have need to call it as this function is called from localBuild and udpateSpec.
+# Parameter:
+# - comment to write into the spec file
 bumpSpec () {
     local comment
     [[ $# -eq 1 ]]                  || die ${LINENO} "bumpSpec expected a comment" 1
@@ -160,6 +186,9 @@ bumpSpec () {
     rpmdev-bumpspec -u "$USERSTRING" --comment="${comment}" "${tmpSpecFile}"
 }
 
+# localBuild
+# This function is used to do a local build
+# The build is done if package get an update or if variable force is true
 localBuild () {
     [[ $# -eq 0 ]]                  || die ${LINENO} "buildRPM expected 0 or 1 parameters not $#" 1
     [[ $isInitialized == true ]]    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
@@ -175,6 +204,9 @@ localBuild () {
     fi
 }
 
+# getRPMS
+# This function is not used.
+# This function allow to get list of generated rpm file by reading log file
 getRPMS () {
     local line
     [[ $isInitialized == true ]]    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
@@ -187,6 +219,9 @@ getRPMS () {
     fi
 }
 
+# getSpecRelease
+# This function is not used
+# This function allow to get the current release number from the spec file
 getSpecRelease () {
     local isSearching eof
     local -r pattern='^Release:[[:blank:]]+([[:digit:]]+)'
@@ -205,6 +240,13 @@ getSpecRelease () {
     done  < "${tmpSpecFile}"
 }
 
+# udpateSpec
+# This function is used to update spec file.
+# Parameter:
+# - comment to append into the changelog section
+# - pairs of rules/new value to update into the spec file
+#   The rule is a regexp with a group to catch.
+#   If the regexp is true, it will replace the group caught by the given value.
 udpateSpec () {
     local comment parameters index match line pattern value tmpfile
     [[ $# -ge 1 ]]                                  || die ${LINENO} "udpadeSpec expected at least 1 parameters not $#" 1
@@ -242,6 +284,9 @@ udpateSpec () {
     fi
 }
 
+# getSourcesFiles
+# This function is used to get sources files need by reading spec file.
+# You do not have need to call it as this function is called by init function.
 getSourcesFiles () {
     local line sourceFile url key hashValue varValue varName
     local -A variables
@@ -278,6 +323,11 @@ getSourcesFiles () {
     [[ ${#sourcesFiles} -ne 0 ]] || die ${LINENO} 'sources files List is epmty' 1
 }
 
+# remoteBuild
+# This function is used to do a remote build by using fedpkg tool
+# The build is done if package get an update or if variable force is true
+# Parameter:
+# - comment to use when commiting
 remoteBuild () {
     local comment untracked item
     [[ "$#" -eq 0 || "$#" -eq 1 ]]  || die ${LINENO} "updatePackage expected 0 or 1 parameters not $#" 1
@@ -306,6 +356,10 @@ remoteBuild () {
     fi
 }
 
+# gitGetRepo
+# This function is used to download a git repo and to update it from lates commit put by upstream
+# Parameter:
+# - git url to use
 gitGetRepo () {
     local repo
     [[ "$#" -eq 1 ]]                || die ${LINENO} "gitGetRepo expected 1 parameters not $#" 1
@@ -320,6 +374,9 @@ gitGetRepo () {
     fi
 }
 
+# gitExtractSnapDate
+# This function is used to get date from the latest commit.
+# The date is stored into the global variable 'snapdate'.
 gitExtractSnapDate () {
     local date_string
     [[ $# -eq 0 ]]  || die ${LINENO} "gitExtractSnapDate expected 0 parameters not $#" 1
@@ -329,6 +386,9 @@ gitExtractSnapDate () {
     snapdate="${date_string//-/}"
 }
 
+# gitExtractRev
+# This function is used to get the latest revision.
+# The revision is stored into the global variable 'revision'.
 gitExtractRev () {
     [[ $# -eq 0 ]]          || die ${LINENO} "gitExtractRev expected 0 parameters not $#" 1
     [[ -e '.git' ]]         || die ${LINENO} "Error: is not a git repository" 1
@@ -336,6 +396,12 @@ gitExtractRev () {
     revision="$(git rev-parse --short HEAD)"
 }
 
+# gitArchive
+# This function is used to create an archive .tar.xz from a git repo.
+# Parameter:
+# - root directory to use
+# - archive name
+# - output dirctory
 gitArchive () {
     local package alphatag outputDir archive
     [[ $# -eq 3 ]]  || die ${LINENO} "gitArchive expected 3 parameters not $#" 1

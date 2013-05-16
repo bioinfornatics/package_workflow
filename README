@@ -9,13 +9,13 @@ Take a look to snippet code and add your own script into $HOME/rpmbuild/SCRIPT
 
 $ ./builder.sh -l <login> -m <my email> -n <real name> --branchList 'f18 f19'
 
-all of these parameter can be tored into a config file
+All of these parameters can be stored into a config file
 - $HOME/.config/builder/config
 - /etc/builder/config
 
-argument sent from commad line override config file
+Parameters sent from commad line override config file
 
-exemple:
+Example:
 [GLOBAL]
 name=<real name>
 login=<login>

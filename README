@@ -1,0 +1,26 @@
+Installation
+
+$ install -d $HOME/rpmbuild/SCRIPT
+$ install -D src/*.sh $HOME/rpmbuild/SCRIPT
+
+Usage
+
+Take a look to snippet code and add your own script into $HOME/rpmbuild/SCRIPT
+
+$ ./builder.sh -l <login> -m <my email> -n <real name> --branchList 'f18 f19'
+
+all of these parameter can be tored into a config file
+- $HOME/.config/builder/config
+- /etc/builder/config
+
+argument sent from commad line override config file
+
+exemple:
+[GLOBAL]
+name=<real name>
+login=<login>
+mail=<mail>
+branchList=f18 f19
+[BRANCH]
+ldc="f19"
+derelict="f18"

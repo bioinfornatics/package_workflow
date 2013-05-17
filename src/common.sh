@@ -117,15 +117,23 @@ bumpSpec () {
 # This function is used to do a local build
 # The build is done if package get an update or if variable force is true
 localBuild () {
+    local fedora_version tmp srpms
     [[ $# -eq 0 ]]                  || die ${LINENO} "buildRPM expected 0 or 1 parameters not $#" 1
     [[ $isInitialized == true ]]    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
     [[ $verbose == true ]]          && echo 'Building '"${package_name}"' rpms'
     
+    fedora_version="${branch/f/fedora-}"'-'"$(uname -m)"
     if [[ $needToBump == false  && $force == true ]]; then
         bumpSpec "Rebuild"
-   elif [[ $needToBump == true  || $force == true ]]; then
+    fi
+    
+    if [[ $needToBump == true  || $force == true ]]; then
         echo '==== Building '"${package_name}"' rpms ====' >&2
-        rpmbuild -ba "${tmpSpecFile}"
+        tmp=$( rpmbuild -bs "${tmpSpecFile}" )
+        if [[ "${tmp}" =~ ${SRPMS}(.+\.rpm) ]]; then
+            srpms="${BASH_REMATCH[1]}"
+            mock -r ${fedora_version} ${srpms}
+        fi
         echo '==== End to build '"${package_name}"' rpms ====' >&2
     fi
 }

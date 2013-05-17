@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-declare -r -x RPMBUILD="${HOME}"/rpmbuild
-declare -r -x SOURCES="${RPMBUILD}"/SOURCES
-declare -r -x SPECS="${RPMBUILD}"/SPECS
-declare -r -x SRPMS="${RPMBUILD}"/SRPMS
-declare -r -x RPMS="${RPMBUILD}"/RPMS
-declare -r -x LOGDIR="${RPMBUILD}"/LOG
+declare -r -x RPMBUILD="${HOME}"/rpmbuild/
+declare -r -x SOURCES="${RPMBUILD}"/SOURCES/
+declare -r -x SPECS="${RPMBUILD}"/SPECS/
+declare -r -x SRPMS="${RPMBUILD}"/SRPMS/
+declare -r -x RPMS="${RPMBUILD}"/RPMS/
+declare -r -x LOGDIR="${RPMBUILD}"/LOG/
 
 declare -r -x RESET="$(tput sgr0)"
 declare -r -x BOLD="$(tput bold)"

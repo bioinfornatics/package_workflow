@@ -1,41 +1,8 @@
 
-declare -r  RPMBUILD="${HOME}"/rpmbuild
-declare -r  SOURCES="${RPMBUILD}"/SOURCES
-declare -r  SPECS="${RPMBUILD}"/SPECS
-declare -r  SRPMS="${RPMBUILD}"/SRPMS
-declare -r  RPMS="${RPMBUILD}"/RPMS
-declare -r  LOGDIR="${RPMBUILD}"/LOG
-declare     MAIL
-declare     NAME
-declare     USERSTRING="${NAME} <${MAIL}>"
-declare     LOGIN
-
-declare -r  RESET="$(tput sgr0)"
-declare -r  BOLD="$(tput bold)"
-declare -r  BLACKF="$(tput setaf 0)"
-declare -r  BLACKB="$(tput setab 0)"
-declare -r  REDF="$(tput setaf 1)"
-declare -r  REDB="$(tput setab 1)"
-declare -r  GREENF="$(tput setaf 2)"
-declare -r  GREENB="$(tput setab 2)"
-declare -r  YELLOWF="$(tput setaf 3)"
-declare -r  YELLOWB="$(tput setab 3)"
-declare -r  BLUEF="$(tput setaf 4)"
-declare -r  BLUEB="$(tput setab 4)"
-declare -r  MAGENTAF="$(tput setaf 5)"
-declare -r  MAGENTAB="$(tput setab 5)"
-declare -r  CYANF="$(tput setaf 6)"
-declare -r  CYANB="$(tput setab 6)"
-declare -r  WHITEF="$(tput setaf 7)"
-declare -r  WHITEB="$(tput setab 7)"
-
 
 declare -x needToBump=false
-declare -x force=false
 declare -x suourceUpdated=false
 declare -x isInitialized=false
-declare -x verbose=false
-declare -x branch
 declare -x snapdate
 declare -x revision
 declare -x release
@@ -75,27 +42,31 @@ die () {
 # Parameter:
 # - package name
 init () {
-    [[ $# -eq 1 ]]      || die ${LINENO} 'init expected a one parameter to set package_name. Not '"$#" 1
-    [[ -n "$1" ]]       || die ${LINENO} 'Package name should to be not empty'
-    [[ -n "{$branch}" ]]|| die ${LINENO} 'Branch name should to be not empty'
+    [[ $# -eq 1 ]]          || die ${LINENO} 'init expected a one parameter to set package_name. Not '$# 1
+    [[ -n "$1" ]]           || die ${LINENO} 'Package name should to be not empty' 1
+    [[ -n "${branch}" ]]    || die ${LINENO} 'Branch name should to be not empty' 1
+    [[ -n "${name}" ]]      || die ${LINENO} 'A real name to put into changelog is required' 1
+    [[ -n "${mail}" ]]      || die ${LINENO} 'A mail to put into changelog is required' 1
     package_name="$1"
     trap 'die ${LINENO}'  1 15 ERR
     trap 'end' EXIT
+    userstring="${name} <${mail}>"
     specFile="${SPECS}"/"${package_name}"/"${package_name}"'.spec'
     tmpSpecFile="$(mktemp)"
-    logOut="${LOGDIR}"'/'"${package_name}"'.out'
-    logErr="${LOGDIR}"'/'"${package_name}"'.err'
+    logOut="${LOGDIR}"'/'"${package_name}_${branch}"'.out'
+    logErr="${LOGDIR}"'/'"${package_name}_${branch}"'.err'
     branchList=( $@ )
     originalDir=$( readlink -f . )
     
     cp "${specFile}" "${tmpSpecFile}"
     
     [[ -d "${LOGDIR}" ]]    || mkdir "${LOGDIR}"
-    [[ -f "${specFile}" ]]  || die ${LINENO} "spec file: ${specFile} do not exist" 1
+    [[ -f "${specFile}" ]]  || die ${LINENO} 'spec file: '${specFile}' do not exist' 1
     [[ -f "${logOut}" ]]    && rm "${logOut}"
     [[ -f "${logErr}" ]]    && rm "${logErr}"
     isInitialized=true
-    
+    [[ -e /proc/$$/fd/3 ]] && die ${LINENO} 'File descriptor 3 already used' 1
+    [[ -e /proc/$$/fd/4 ]] && die ${LINENO} 'File descriptor 4 already used' 1
     exec 3>&1  1>>"${logOut}" # Merqe fd 1 with fd 3 and Redirect to logOut file
     exec 4>&2  2>>"${logErr}" # Merqe fd 2 with fd 4 and Redirect to logErr file
     
@@ -123,54 +94,10 @@ end (){
     [[ -n $1 ]] && code="$1" || code=0
     trap - EXIT
     trap - ERR
-    exec 1>&3 3>&- # Restore stdout Close file descriptor #3
-    exec 2>&4 4>&- # Restore stderr Close file descriptor #4
+    [[ -e /proc/$$/fd/3 ]] && exec 1>&3 3>&- # Restore stdout Close file descriptor #3
+    [[ -e /proc/$$/fd/4 ]] && exec 2>&4 4>&- # Restore stderr Close file descriptor #4
     cd "${originalDir}"
     exit "${code}"
-}
-
-# configReader
-# This function is used to read the config file and set variables automatically.
-# You do not have need to call it as this function is called from builder script.
-# Parameter:
-# - config file to use
-configReader() {
-    local section line configFile
-    local -i lineNumber=1
-    
-    [[ $# -eq 1 ]] || die ${LINENO} "configReader expected a config file" 1
-    configFile="$1"
-    
-    while read line; do 
-        if [[ "${line}" == '[GLOBAL]' ]]; then
-            section='[GLOBAL]'
-        elif [[ "${line}" == '[BRANCH]' ]]; then
-            section='[BRANCH]'
-        elif [[ "${section}" == '[GLOBAL]' ]]; then
-            if [[ "${line}" =~ ^([[:alnum:]_]+)[[:blank:]]*=[[:blank:]]*(.+)$ ]]; then
-                case "${BASH_REMATCH[1]}" in
-                    name)          NAME="${BASH_REMATCH[2]}";;
-                    login)         LOGIN="${BASH_REMATCH[2]}";;
-                    mail)          MAIL="${BASH_REMATCH[2]}";;
-                    branchList)    branchList="${BASH_REMATCH[2]}";;
-                    *) echo ${lineNumber} 'Unknow key '${BASH_REMATCH[1]};;
-                esac
-            else
-                echo 'Warning: Unknow line format at '${lineNumber}
-            fi
-        elif [[ "${section}" == '[BRANCH]' ]]; then
-            if [[ "${line}" =~ ^([[:alnum:]_]+)[[:blank:]]*=[[:blank:]]*(.+)$ ]]; then
-                if [[ ${packageBranch["${BASH_REMATCH[1]}"]} ]]; then
-                    packageBranch["${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
-                else
-                    packageBranch["${BASH_REMATCH[1]}"]=",${BASH_REMATCH[2]}"
-                fi
-            else
-                echo 'Warning: Unknow line format at '${lineNumber}
-            fi
-        fi
-        ((lineNumber++))
-    done < "${configFile}"
 }
 
 # bumpSpec
@@ -183,7 +110,7 @@ bumpSpec () {
     [[ $# -eq 1 ]]                  || die ${LINENO} "bumpSpec expected a comment" 1
     [[ $isInitialized == true ]]    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
     comment="$1"
-    rpmdev-bumpspec -u "$USERSTRING" --comment="${comment}" "${tmpSpecFile}"
+    rpmdev-bumpspec -u "$userstring" --comment="${comment}" "${tmpSpecFile}"
 }
 
 # localBuild
@@ -196,8 +123,7 @@ localBuild () {
     
     if [[ $needToBump == false  && $force == true ]]; then
         bumpSpec "Rebuild"
-    fi
-    if [[ $needToBump == true  || $force == true ]]; then
+   elif [[ $needToBump == true  || $force == true ]]; then
         echo '==== Building '"${package_name}"' rpms ====' >&2
         rpmbuild -ba "${tmpSpecFile}"
         echo '==== End to build '"${package_name}"' rpms ====' >&2
@@ -247,12 +173,13 @@ getSpecRelease () {
 # - pairs of rules/new value to update into the spec file
 #   The rule is a regexp with a group to catch.
 #   If the regexp is true, it will replace the group caught by the given value.
+#   If any rules is given that will force a build
 udpateSpec () {
     local comment parameters index match line pattern value tmpfile
-    [[ $# -ge 1 ]]                                  || die ${LINENO} "udpadeSpec expected at least 1 parameters not $#" 1
-    [[ $isInitialized == true ]]                    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
-    [[ -n "$1" ]]            && comment="$1"        || die ${LINENO} 'udpadeSpec expected a comment as second parameter' 1
-    shift; shift
+    [[ $# -ge 1 ]]                                  || die ${LINENO} 'udpadeSpec expected at least 1 parameters not '$# 1
+    [[ $isInitialized == true ]]                    || die ${LINENO} 'Error: you need to run init fuction at beginning' 1
+    [[ -n "$1" ]]                && comment="$1"    || die ${LINENO} 'udpadeSpec expected a comment as second parameter' 1
+    shift
     [[ $verbose == true ]] && echo "Updating spec file: ${specFile}"
     
     if [[ -n "$@" ]]; then
@@ -265,7 +192,7 @@ udpateSpec () {
                 pattern=${parameters[$index]}
                 value=${parameters[$(( $index + 1 ))]}
                 
-                if [[ ${line} =~ ${pattern} && "${BASH_REMATCH[1]}" != "${value}" ]]; then
+                if [[ -n "${line}" && "${line}" =~ ${pattern} && "${BASH_REMATCH[1]}" != "${value}" ]]; then
                     needToBump=true
                     line=${line/${BASH_REMATCH[1]}/${value}}
                 fi
@@ -288,11 +215,11 @@ udpateSpec () {
 # This function is used to get sources files need by reading spec file.
 # You do not have need to call it as this function is called by init function.
 getSourcesFiles () {
-    local line sourceFile url key hashValue varValue varName
+    local line sourceFile url key hashValue varValue varname
     local -A variables
     while read line; do
         if [[ "${line}" =~ ^%global[[:blank:]]+([[:alnum:]_]+)[[:blank:]]+([[:alnum:][:punct:]]+) ]]; then
-            varName='%{'"${BASH_REMATCH[1]}"'}'
+            varname='%{'"${BASH_REMATCH[1]}"'}'
             varValue="${BASH_REMATCH[2]}"
             if [[ "${varValue}" =~ [[:punct:]] ]]; then
                 for key in "${!variables[@]}"; do
@@ -302,8 +229,8 @@ getSourcesFiles () {
                     fi
                 done
             fi
-            variables["${varName}"]="${varValue}"
-        elif [[ "${line}" =~ ^Name:[[:blank:]]+([[:alnum:][:punct:]]+) ]]; then
+            variables["${varname}"]="${varValue}"
+        elif [[ "${line}" =~ ^name:[[:blank:]]+([[:alnum:][:punct:]]+) ]]; then
             variables['%{name'}]="${BASH_REMATCH[1]}"
         elif [[ "${line}" =~ ^Version:[[:blank:]]+([[:digit:]\.]+) ]]; then
             variables['%{version'}]="${BASH_REMATCH[1]}"
@@ -348,8 +275,8 @@ remoteBuild () {
         done
         fedpkg new-sources ${sourcesFiles[@]}
         fedpkg commit -m "${comment}" -p
-        fedpkg build
-        #bodhi -u $LOGIN -c "${comment}" -N "${comment}" --type='enhancement' ${package_name}
+        edpkg build
+        #bodhi -u $login -c "${comment}" -N "${comment}" --type='enhancement' ${package_name}
         popd  1> /dev/null
     else
         echo "${package_name}"' already up to date. Nothing to do.'

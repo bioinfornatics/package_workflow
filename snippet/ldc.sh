@@ -33,7 +33,7 @@ gitArchive 'runtime/phobos' "${package_name}-phobos-${phobostag}" "${SOURCES}"
 
 cd "${originalDir}"
 
-udpadeSpec  "Update to rev ${ldc_rev}"                                              \
+udpateSpec  "Update to rev ${ldc_rev}"                                              \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'       "${snapdate}"       \
             '%global[[:blank:]]*ldc_rev[[:blank:]]*(.*)'        "${ldc_rev}"        \
             '%global[[:blank:]]*phobos_rev[[:blank:]]*(.*)'     "${phobos_rev}"     \

@@ -7,7 +7,7 @@ declare alphatag glfw_revision
 
 init 'glfw'
 
-gitGetRepo 'git://github.com/elmindreda/glfw.git'
+gitGetRepo 'git://github.com/glfw/glfw.git'
 gitExtractSnapDate
 gitExtractRev
 glfw_revision="${revision}"

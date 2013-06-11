@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-declare -r -x RPMBUILD="${HOME}"/rpmbuild/
-declare -r -x SOURCES="${RPMBUILD}"/SOURCES/
-declare -r -x SPECS="${RPMBUILD}"/SPECS/
-declare -r -x SRPMS="${RPMBUILD}"/SRPMS/
-declare -r -x RPMS="${RPMBUILD}"/RPMS/
-declare -r -x LOGDIR="${RPMBUILD}"/LOG/
+declare -r -x RPMBUILD=$(readlink -m "${HOME}"'/rpmbuild')
+declare -r -x SOURCES=$(readlink -m "${RPMBUILD}"'/SOURCES')
+declare -r -x SPECS=$(readlink -m "${RPMBUILD}"'/SPECS')
+declare -r -x SRPMS=$(readlink -m "${RPMBUILD}"'/SRPMS')
+declare -r -x RPMS=$(readlink -m "${RPMBUILD}"'/RPMS')
 
 declare -r -x RESET="$(tput sgr0)"
 declare -r -x BOLD="$(tput bold)"
@@ -33,6 +32,7 @@ declare -x -a forceList=()
 declare -x branch
 declare -x verbose=false
 declare -x force=false
+declare -x logdir
 declare -x mail
 declare -x name
 declare -x userstring
@@ -135,11 +135,12 @@ for scriptFile in "${RPMBUILD}"/SCRIPT/*.sh; do
             tmpBranchList=( ${branchList[@]} )
         fi
         for branch in "${tmpBranchList[@]}"; do
+            logdir="$(mktemp --directory)"
             "${scriptFile}"
             if [[ $? -eq 0 ]]; then
-                echo -e ${BOLD}${GREENF}'[Success] '${RESET} "${branch} "$( basename "${scriptFile}" .sh )
+                echo -e "${BOLD}${GREENF}"'[Success] '${RESET} "${branch} "$( basename "${scriptFile}" .sh )' ( '"${logdir}"' )'
             else
-                echo -e ${BOLD}${REDF}'[Failed]  '${RESET} "${branch} "$( basename "${scriptFile}" .sh ) >&2
+                echo -e "${BOLD}${REDF}"'[Failed]  '${RESET} "${branch} "$( basename "${scriptFile}" .sh )' ( '"${logdir}"' )' >&2
             fi
         done
     fi

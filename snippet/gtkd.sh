@@ -13,7 +13,7 @@ alphatag="${snapdate}"git"${gtkd_revision}"
 
 gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCES}"
 
-udpadeSpec  "Update to rev ${gtkd_revision}"                                        \
+udpateSpec  "Update to rev ${gtkd_revision}"                                        \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'       "${snapdate}"       \
             '%global[[:blank:]]*gtkd_revision[[:blank:]]*(.*)'  "${gtkd_revision}"
 localBuild

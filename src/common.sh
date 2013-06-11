@@ -8,6 +8,7 @@ declare -x revision
 declare -x release
 declare -x package_name
 declare -x specFile
+declare -x tmpPackageDir
 declare -x tmpSpecFile
 declare -x logOut
 declare -x logErr
@@ -51,36 +52,36 @@ init () {
     trap 'die ${LINENO}'  1 15 ERR
     trap 'end' EXIT
     userstring="${name} <${mail}>"
-    specFile="${SPECS}"/"${package_name}"/"${package_name}"'.spec'
-    tmpSpecFile="$(mktemp)"
-    logOut="${LOGDIR}"'/'"${package_name}_${branch}"'.out'
-    logErr="${LOGDIR}"'/'"${package_name}_${branch}"'.err'
+    specFile="${SPECS}"'/'"${package_name}"'/'"${package_name}"'.spec'
+    tmpSpecFile="${logdir}"'/'"${package_name}"'.spec'
+    logOut="${logdir}"'/'"${package_name}_${branch}"'.out'
+    logErr="${logdir}"'/'"${package_name}_${branch}"'.err'
     branchList=( $@ )
     originalDir=$( readlink -f . )
-    
+
     cp "${specFile}" "${tmpSpecFile}"
-    
-    [[ -d "${LOGDIR}" ]]    || mkdir "${LOGDIR}"
+
+    [[ -d "${logdir}" ]]    || die ${LINENO} 'log directory: '${logdir}' do not exist' 1
     [[ -f "${specFile}" ]]  || die ${LINENO} 'spec file: '${specFile}' do not exist' 1
     [[ -f "${logOut}" ]]    && rm "${logOut}"
     [[ -f "${logErr}" ]]    && rm "${logErr}"
     isInitialized=true
     [[ -e /proc/$$/fd/3 ]] && die ${LINENO} 'File descriptor 3 already used' 1
     [[ -e /proc/$$/fd/4 ]] && die ${LINENO} 'File descriptor 4 already used' 1
+    [[ $verbose == true ]] && echo 'Starting to process package '"${BOLD}${package_name}${RESET}"' on branch '"${BOLD}${branch}${RESET}"' ( '"${logdir}"' )'
     exec 3>&1  1>>"${logOut}" # Merqe fd 1 with fd 3 and Redirect to logOut file
     exec 4>&2  2>>"${logErr}" # Merqe fd 2 with fd 4 and Redirect to logErr file
-    
+
     if [[ ! -f "${specFile}" ]]; then
         ( cd "${SPECS}" && fedpkg clone "${package_name}" )
     fi
 
-    
-    pushd "${SPECS}"/"${package_name}"/  1> /dev/null
+
+    pushd "${SPECS}"/"${package_name}"/ 1> /dev/null
         fedpkg switch-branch ${branch} 1> /dev/null
         fedpkg pull 1> /dev/null
     popd  1> /dev/null
-    
-    [[ $verbose == true ]] && echo 'Starting to process package '"${package_name}"
+
     getSourcesFiles
 }
 
@@ -121,18 +122,20 @@ localBuild () {
     [[ $# -eq 0 ]]                  || die ${LINENO} "buildRPM expected 0 or 1 parameters not $#" 1
     [[ $isInitialized == true ]]    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
     [[ $verbose == true ]]          && echo 'Building '"${package_name}"' rpms'
-    
+
     fedora_version="${branch/f/fedora-}"'-'"$(uname -m)"
     if [[ $needToBump == false  && $force == true ]]; then
-        bumpSpec "Rebuild"
+        bumpSpec "Rebuild" || die ${LINENO} 'bumpspec failure!' 1
     fi
-    
+
     if [[ $needToBump == true  || $force == true ]]; then
         echo '==== Building '"${package_name}"' rpms ====' >&2
         tmp=$( rpmbuild -bs "${tmpSpecFile}" )
         if [[ "${tmp}" =~ ${SRPMS}(.+\.rpm) ]]; then
-            srpms="${BASH_REMATCH[1]}"
-            mock -r ${fedora_version} ${srpms}
+            srpms="${SRPMS}${BASH_REMATCH[1]}"
+            mock --resultdir="${tmpPackageDir}" -r ${fedora_version} ${srpms} || die ${LINENO} 'mock failure!' 1
+        else
+            die ${LINENO} 'SRPMS : '"${tmp}"' was not found!' 1
         fi
         echo '==== End to build '"${package_name}"' rpms ====' >&2
     fi
@@ -161,10 +164,10 @@ getSpecRelease () {
     local -r pattern='^Release:[[:blank:]]+([[:digit:]]+)'
     [[ $isInitialized == true ]]    || die ${LINENO} "Error: you need to run init fuction at beginning" 1
     isSearching=true
-    
+
     while isSearching; do
         eof=$(read line)
-        
+
         if [[ "$eof" -ne 0 ]]; then
             isSearching=false
         elif [[ "${line}" =~ $pattern ]]; then
@@ -189,17 +192,17 @@ udpateSpec () {
     [[ -n "$1" ]]                && comment="$1"    || die ${LINENO} 'udpadeSpec expected a comment as second parameter' 1
     shift
     [[ $verbose == true ]] && echo "Updating spec file: ${specFile}"
-    
+
     if [[ -n "$@" ]]; then
         [[ $(( $# % 2 )) ]]  && parameters=( "$@" ) || die ${LINENO} 'udpadeSpec expected a paired numbers of parameters' 1
-        
+
         tmpfile="$(mktemp)"
-        
+
         while read -r line; do
-            for ((index=0;  $index < ${#parameters[@]}; index+=2 )); do 
+            for (( index=0; $index < ${#parameters[@]}; index+=2 )); do 
                 pattern=${parameters[$index]}
                 value=${parameters[$(( $index + 1 ))]}
-                
+
                 if [[ -n "${line}" && "${line}" =~ ${pattern} && "${BASH_REMATCH[1]}" != "${value}" ]]; then
                     needToBump=true
                     line=${line/${BASH_REMATCH[1]}/${value}}
@@ -213,7 +216,7 @@ udpateSpec () {
     else
         needToBump=true
     fi
-   
+
     if ${needToBump} ; then
         bumpSpec "${comment}"
     fi
@@ -283,7 +286,7 @@ remoteBuild () {
         done
         fedpkg new-sources ${sourcesFiles[@]}
         fedpkg commit -m "${comment}" -p
-        edpkg build
+        fedpkg build
         #bodhi -u $login -c "${comment}" -N "${comment}" --type='enhancement' ${package_name}
         popd  1> /dev/null
     else

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # dsqlite
 
-declare alphatag dsqlite_revision originalDir
+declare alphatag dsqlite_revision
 
 . "$(dirname $0)"/common.sh
 

@@ -32,12 +32,11 @@ declare -x -a forceList=()
 declare -x branch
 declare -x verbose=false
 declare -x force=false
-declare -x logdir
+declare -x logDir
 declare -x mail
 declare -x name
 declare -x userstring
 declare -x login
-
 
 usage () {
     local errCode
@@ -135,12 +134,12 @@ for scriptFile in "${RPMBUILD}"/SCRIPT/*.sh; do
             tmpBranchList=( ${branchList[@]} )
         fi
         for branch in "${tmpBranchList[@]}"; do
-            logdir="$(mktemp --directory)"
+            logDir="$(mktemp --directory)"
             "${scriptFile}"
             if [[ $? -eq 0 ]]; then
-                echo -e "${BOLD}${GREENF}"'[Success] '${RESET} "${branch} "$( basename "${scriptFile}" .sh )' ( '"${logdir}"' )'
+                echo -e "${BOLD}${GREENF}"'[Success] '"${RESET} ${branch} "$( basename "${scriptFile}" .sh )' ( '"${logDir}"' )'
             else
-                echo -e "${BOLD}${REDF}"'[Failed]  '${RESET} "${branch} "$( basename "${scriptFile}" .sh )' ( '"${logdir}"' )' >&2
+                echo -e "${BOLD}${REDF}"'[Failed]  '${RESET} "${branch} "$( basename "${scriptFile}" .sh )' ( '"${logDir}"' )' >&2
             fi
         done
     fi

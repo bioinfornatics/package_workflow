@@ -20,7 +20,7 @@ Example:
 name=<real name>
 login=<login>
 mail=<mail>
-branchList=f18 f19
+branchList=f18 f19 master
 [BRANCH]
 ldc="f19"
 derelict="f18"

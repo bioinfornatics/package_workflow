@@ -11,6 +11,4 @@ for sourceFile in "${sourcesFiles}"; do
     fi
 done
 
-localBuild
-
-remoteBuild
+build

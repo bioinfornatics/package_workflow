@@ -12,11 +12,12 @@ gitExtractRev
 derelict_revision="${revision}"
 alphatag="${snapdate}"git"${derelict_revision}"
 
+
 gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCES}"
+
 
 udpateSpec  "Update to rev ${derelict_revision}"                                            \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'           "${snapdate}"           \
             '%global[[:blank:]]*derelict_revision[[:blank:]]*(.*)'  "${derelict_revision}"
-localBuild
 
-remoteBuild "Updating to rev ${derelict_revision}"
+build "Updating to rev ${derelict_revision}"

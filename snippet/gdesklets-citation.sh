@@ -16,6 +16,5 @@ gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCE
 udpateSpec  "Update to rev ${gdesklets_citation_revision}"                                  \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'  "${snapdate}"                    \
             '%global[[:blank:]]*rev[[:blank:]]*(.*)'       "${gdesklets_citation_revision}"
-localBuild
 
-remoteBuild "Updating to rev ${gdesklets_citation_revision}"
+build "Updating to rev ${gdesklets_citation_revision}"

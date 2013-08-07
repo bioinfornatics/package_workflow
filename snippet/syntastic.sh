@@ -17,6 +17,5 @@ gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCE
 udpateSpec  "Update to rev ${syntastic_revision}"                                           \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'           "${snapdate}"           \
             '%global[[:blank:]]*revision[[:blank:]]*(.*)'  "${syntastic_revision}"
-localBuild
 
-remoteBuild "Updating to rev ${syntastic_revision}"
+build "Updating to rev ${syntastic_revision}"

@@ -16,6 +16,5 @@ gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCE
 udpateSpec  "Update to rev ${gtkd_revision}"                                        \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'       "${snapdate}"       \
             '%global[[:blank:]]*gtkd_revision[[:blank:]]*(.*)'  "${gtkd_revision}"
-localBuild
 
-remoteBuild "Updating to rev ${gtkd_revision}"
+build "Updating to rev ${gtkd_revision}"

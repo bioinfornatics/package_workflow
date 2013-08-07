@@ -19,6 +19,4 @@ udpateSpec  "Update to rev ${dustmite_revision}"                                
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'                "${snapdate}"          \
             '%global[[:blank:]]*dustmite_revision[[:blank:]]*(.*)'       "${dustmite_revision}"
 
-localBuild
-
-remoteBuild "Updating to rev ${dustmite_revision}"
+build "Updating to rev ${dustmite_revision}"

@@ -19,6 +19,4 @@ udpateSpec  "Update to rev ${gl3n_revision}"                                    
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'             "${snapdate}"           \
             '%global[[:blank:]]*gl3n_revision[[:blank:]]*(.*)'       "${gl3n_revision}"
 
-localBuild
-
-remoteBuild "Updating to rev ${gl3n_revision}"
+build "Updating to rev ${gl3n_revision}"

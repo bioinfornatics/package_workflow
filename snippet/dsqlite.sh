@@ -18,6 +18,5 @@ gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCE
 udpateSpec  "Update to rev ${dsqlite_revision}"                                                 \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'               "${snapdate}"           \
             '%global[[:blank:]]*dsqlite_revision[[:blank:]]*(.*)'       "${dsqlite_revision}"
-localBuild
 
-remoteBuild "Updating to rev ${dsqlite_revision}"
+build "Updating to rev ${dsqlite_revision}"

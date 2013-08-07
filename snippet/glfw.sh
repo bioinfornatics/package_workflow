@@ -18,6 +18,5 @@ gitArchive "${package_name}-${alphatag}" "${package_name}-${alphatag}" "${SOURCE
 udpateSpec  "Update to rev ${glfw_revision}"                                            \
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'           "${snapdate}"       \
             '%global[[:blank:]]*glfw_revision[[:blank:]]*(.*)'      "${glfw_revision}"
-localBuild
 
-remoteBuild "Updating to rev ${glfw_revision}"
+build "Updating to rev ${glfw_revision}"

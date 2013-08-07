@@ -19,6 +19,4 @@ udpateSpec  "Update to rev ${tango_revision}"                                   
             '%global[[:blank:]]*snapdate[[:blank:]]*(.*)'             "${snapdate}"           \
             '%global[[:blank:]]*tango_revision[[:blank:]]*(.*)'       "${tango_revision}"
 
-localBuild
-
-remoteBuild "Updating to rev ${tango_revision}"
+build "Updating to rev ${tango_revision}"

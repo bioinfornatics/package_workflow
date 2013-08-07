@@ -39,6 +39,4 @@ udpateSpec  "Update to rev ${ldc_rev}"                                          
             '%global[[:blank:]]*phobos_rev[[:blank:]]*(.*)'     "${phobos_rev}"     \
             '%global[[:blank:]]*druntime_rev[[:blank:]]*(.*)'   "${druntime_rev}"
 
-localBuild
-
-remoteBuild "Updating to rev ${ldc_rev}"
+build "Updating to rev ${ldc_rev}"
